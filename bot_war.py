@@ -1,22 +1,27 @@
 #!/usr/bin/env python
-import urllib2, re, time, hashlib
+import urllib2, re, time, hashlib, zlib
+import simplejson as json
 
 
 class GameBot():
 	def __init__(self):
 		self.wait = True
+		self.buyed = False
+		self.method = "TradingOffers.GetOffers"
 		self.header = {
-			"Connection":"close",
-			"Content-Type":"text/html",
+			"Connection": "close",
+			"Content-Type": "text/html",
+			"User-Agent": "Mozilla/5.0 (X11; Linux i686) AppleWebKit/537.31 (KHTML, like Gecko) Chrome/26.0.1410.40 Safari/537.31",
+			"Accept-Encoding": "deflate",
 			"sign-code":"",
-			"signin-authKey":"",
-			"signin-userId":"",
-			"server-method":"ImproveSkill",
-			"client-ver": 369
+			"signin-authKey": "", #auth-key
+			"signin-userId": "", #your vkID [use Wireshark for this Luke]
+			"server-method": self.method,
+			"client-ver": 403
 		}
-		self.index = 1009		
-		self.params = '{"n":{"n":1},"t":1354278702154,"o":{"i":' + str(self.index) + '},"u":1354278564016,"q":[195,208,209],"g":138138,"r":39185}'
-		self.url = 'http://209.190.120.218/Geo/Segment01/segment.ashx'
+		self.index = 0		
+		self.params = '{"x":0,"s":0,"n":0,"i":' + str(self.index) + ',"o":0,"c":6,"f":5,"d":null,"g":null}'
+		self.url = 'http://173.244.186.146/GeoVk/Segment01/segment.ashx'
 		self.counter = 1
 
 	'''====== magic with sign-code here! ======='''
@@ -28,33 +33,42 @@ class GameBot():
 	def connect(self):
 		# 'Skill maximum level reached'
 		req = urllib2.Request(self.url, self.params, self.set_sing_code())
-		response = urllib2.urlopen(req)		
-		return response.read()
+		response = urllib2.urlopen(req)	
+		if self.buyed == False:	
+			return zlib.decompress(response.read(), 16 + zlib.MAX_WBITS)
+		else:
+			return 'Good'
 	'''====== check progress of skill improvement ======='''
 	# Todo: check number of skill (increment bruteforce?)
 	def progress(self):
-		data = self.connect()
-		self.wait = True
-		if(re.findall(r"Skill improvement already in progress", data)):
-			print 'In progress'
-			#return True
-		elif(re.findall(r"Skill maximum level reached", data) or self.counter > 9):
-			print 'All done'
-			self.index += 1
-			self.counter = 1			
-			self.wait = False			
-			#return False
-		else:
-			self.counter += 1
-			print 'New cycle', self.counter			
-			self.connect()			
-			#return True
+		#print self.index, self.header["server-method"]		
+		self.index += 6				
+		self.buyed = False		
+		data = json.loads(self.connect()[3:-33]) # get offers
+		for items in data.get('o'):			#accept offers for money
+			#print items
+			if (int(items["s"]["r"]["m"]) >= 1000):
+				print "BuyThis -> Money: %s\tTitanium: %s\tUranium: %s" % (items["o"]["r"]["m"], items["o"]["r"]["t"], items["o"]["r"]["u"]) # buy
+				print "SoldThis -> Money: %s\tTitanium: %s\tUranium: %s" % (items["s"]["r"]["m"], items["s"]["r"]["t"], items["s"]["r"]["u"]) # sold
+				self.header['server-method'] = "TradingOffers.AcceptOffer"
+				pp = '{"t":1363981306465,"o":{"o":{"u":%s,"s":{"s":0,"d":null,"c":0,"r":{"u":%s,"m":%s,"c":0,"t":%s,"g":0}},"i":%s,"t":%s,"o":{"s":%s,"d":null,"c":%s,"r":{"u":%s,"m":%s,"c":0,"t":%s,"g":0}}}},"u":1363981012413,"q":[256,257,261],"g":294052,"r":40813}' % (items["u"], items["s"]["r"]["u"], items["s"]["r"]["m"], items["s"]["r"]["t"], items["i"], items["t"], items["o"]["s"], items["o"]["c"], items["o"]["r"]["u"], items["o"]["r"]["m"], items["o"]["r"]["t"])
+				self.params = str(pp).replace("'", '"').replace(" ", "")
+				self.buyed = True
+				self.set_sing_code()
+				self.connect()
+				if(self.index // 6 > 5 or self.buyed == True):
+					self.index = 0		
+					self.params = '{"x":0,"s":0,"n":0,"i":' + str(self.index) + ',"o":0,"c":6,"f":5,"d":null,"g":null}'	
+					self.header['server-method'] = "TradingOffers.GetOffers"
+					self.set_sing_code()				
+				
+				print "===" * 20
+		
 
 
 
 bot = GameBot()
 while True:
-	if(bot.progress() == False):
-		break
-	if bot.wait == True:
-		time.sleep(300)
+	bot.progress()
+	if bot.index == 0:
+		time.sleep(7)
