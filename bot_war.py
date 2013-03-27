@@ -53,7 +53,7 @@ class GameBot():
 		data = json.loads(self.connect()[3:-33]) # get offers
 		for items in data.get('o'):			#accept offers for money
 			try:
-				if ( int(items["s"]["r"]["m"]) >= 3000 and int(items["o"]["r"][self.wish]) > 0 and (int(items["s"]["r"]["m"]) // int(items["o"]["r"]["u"]) <=4) and (int(items["s"]["r"]["m"]) // int(items["o"]["r"]["t"]) <=4)):
+				if ( int(items["s"]["r"]["m"]) >= 3000 and int(items["o"]["r"][self.wish]) > 0 and (int(items["s"]["r"]["m"]) // int(items["o"]["r"][self.wish]) <=4) ):
 					print "BuyThis -> Money: %s\tTitanium: %s\tUranium: %s" % (items["o"]["r"]["m"], items["o"]["r"]["t"], items["o"]["r"]["u"]) # buy
 					print "SoldThis -> Money: %s\tTitanium: %s\tUranium: %s" % (items["s"]["r"]["m"], items["s"]["r"]["t"], items["s"]["r"]["u"]) # sold
 					self.header['server-method'] = "TradingOffers.AcceptOffer"
