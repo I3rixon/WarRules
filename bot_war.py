@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-import urllib2, re, time, hashlib, zlib, sys
+import urllib2, re, time, hashlib, zlib, sys, time
 import simplejson as json
 
 
@@ -8,7 +8,7 @@ class GameBot():
 		self.wait = True
 		self.buyed = False
 		self.wish = "t"
-		if(str(sys.argv[1]) == "uran"): #if want buy Uran (default it's Titanium)
+		if(str(sys.argv[1]) == "uran"):
 			self.wish = "u"
 		self.method = "TradingOffers.GetOffers"
 		self.header = {
@@ -16,8 +16,8 @@ class GameBot():
 			"Content-Type": "text/html",
 			"User-Agent": "Mozilla/5.0 (X11; Linux i686) AppleWebKit/537.31 (KHTML, like Gecko) Chrome/26.0.1410.40 Safari/537.31",
 			"Accept-Encoding": "deflate",
-			"sign-code":"",
-			"signin-authKey": "", # use wireshark Luke
+			"sign-code":"",	#use wireshark Luke
+			"signin-authKey": "", # use wireshark
 			"signin-userId": "vk1", # your VK ID
 			"server-method": self.method,
 			"client-ver": 403
@@ -43,15 +43,17 @@ class GameBot():
 				try:
 					return json.loads(response.read()[1:])["m"] # msg output
 				except:
-					return 'Buyed'
+					time.sleep(60)
+					return 'Buyed'					
 		except:
 			None
-	'''====== get lists of offers ======='''
+	'''====== check progress ======='''
 	def progress(self):
 		self.index += 6
 		self.buyed = False
 		data = json.loads(self.connect()[3:-33]) # get offers
 		for items in data.get('o'):			#accept offers for money
+			#print items
 			try:
 				if ( int(items["s"]["r"]["m"]) >= 3000 and int(items["o"]["r"][self.wish]) > 0 and (int(items["s"]["r"]["m"]) // int(items["o"]["r"][self.wish]) <=4) ):
 					print "BuyThis -> Money: %s\tTitanium: %s\tUranium: %s" % (items["o"]["r"]["m"], items["o"]["r"]["t"], items["o"]["r"]["u"]) # buy
@@ -62,6 +64,7 @@ class GameBot():
 					self.buyed = True
 					self.set_sing_code()
 					print self.connect(self.buyed)
+					print time.strftime("%D %H:%M:%S",time.localtime())
 					if(self.index // 6 > 5 or self.buyed == True):
 						self.index = 0
 						self.params = '{"x":0,"s":0,"n":0,"i":' + str(self.index) + ',"o":0,"c":6,"f":5,"d":null,"g":null}'
