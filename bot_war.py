@@ -20,7 +20,7 @@ class GameBot():
 			"signin-authKey": "", # use wireshark
 			"signin-userId": "vk1", # your VK ID
 			"server-method": self.method,
-			"client-ver": 410
+			"client-ver": 411
 		}
 		self.index = 0
 		self.params = '{"x":0,"s":0,"n":0,"i":' + str(self.index) + ',"o":0,"c":6,"f":5,"d":null,"g":null}'
