@@ -44,7 +44,7 @@ class GameBot():
 					return json.loads(response.read()[1:])["m"] # msg output
 				except:
 					time.sleep(60)
-					return 'Buyed'					
+					return 'Bought'					
 		except:
 			None
 	'''====== check progress ======='''
